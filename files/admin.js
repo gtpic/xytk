@@ -145,7 +145,7 @@ async function loadImages(categoryId = 0) {
         const tgCount = data.length - r2Count;
         const statsImagesEl = document.getElementById('stats-images');
         if (statsImagesEl) {
-            statsImagesEl.innerHTML = `<i class="fab fa-cloudflare" style="color:#f48120;"></i> R2: ${r2Count}张 <span style="margin:0 5px;">|</span> <i class="fab fa-telegram-plane" style="color:#0088cc;"></i> TG: ${tgCount}张`;
+            statsImagesEl.innerHTML = `<span style="cursor:pointer;" onclick="filterAdminImagesByStorage('r2')" title="点击查看所有 R2 图片"><i class="fab fa-cloudflare" style="color:#f48120;"></i> R2: ${r2Count}张</span> <span style="margin:0 5px;">|</span> <span style="cursor:pointer;" onclick="filterAdminImagesByStorage('tg')" title="点击查看所有 TG 图片"><i class="fab fa-telegram-plane" style="color:#0088cc;"></i> TG: ${tgCount}张</span>`;
         }
         renderAdminGallery();
         renderAdminPagination();
@@ -538,6 +538,16 @@ function filterAdminImages() {
     adminCurrentPage = 1;
     renderAdminGallery();
     renderAdminPagination();
+}
+function filterAdminImagesByStorage(storageType) {
+    if (storageType === 'r2') {
+        adminFilteredImages = adminAllImages.filter(img => img.message_id === 0);
+    } else if (storageType === 'tg') {
+        adminFilteredImages = adminAllImages.filter(img => img.message_id !== 0);
+    }
+    adminCurrentPage = 1; // 筛选后回到第一页
+    renderAdminGallery(); // 重新渲染图片列表
+    renderAdminPagination(); // 重新渲染分页数据
 }
 function getSelectedIds() {
     return Array.from(document.querySelectorAll('.img-checkbox:checked')).map(cb => parseInt(cb.value));
