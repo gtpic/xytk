@@ -479,7 +479,7 @@ function renderAdminGallery() {
                 ? '<span class="img-badge badge-r2"><i class="fab fa-cloudflare" style="margin-right:4px;"></i>R2</span>' 
                 : '<span class="img-badge badge-tg"><i class="fab fa-telegram-plane" style="margin-right:4px;"></i>TG</span>'}
             <span id="dim-${img.id}" style="position: absolute; top: 10px; right: 10px; font-size: 11px; color: #fff; background: rgba(0,0,0,0.5); padding: 2px 5px; border-radius: 3px; pointer-events: none; display: none; z-index: 10;"></span>
-            <a href="${img.url}" target="_blank"><img src="${img.url}" loading="lazy" onload="let d = document.getElementById('dim-${img.id}'); if(d){ d.innerText = this.naturalWidth + ' × ' + this.naturalHeight + ' px'; d.style.display = 'block'; }"></a>
+            <a href="${img.url}" target="_blank"><img src="${img.url.replace('/image/', '/thumb/').replace(/\.[^/.]+$/, "")}" loading="lazy" onload="let d = document.getElementById('dim-${img.id}'); if(d){ d.innerText = this.naturalWidth + ' × ' + this.naturalHeight + ' px'; d.style.display = 'block'; }"></a>
             <div style="margin-top: 8px;">
                 <input type="text" class="form-control input-sm" value="${img.url}" readonly onclick="this.select()" style="margin-bottom: 5px;">
                 <button class="btn btn-default btn-xs" onclick="copyText('${img.url}')">复制</button>
