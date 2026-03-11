@@ -152,6 +152,26 @@ async function loadImages(categoryId = 0) {
     } catch (err) { gallery.innerHTML = '<p class="text-danger">加载失败</p>'; }
 }
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function generateThumbnail(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 250;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.width > MAX_WIDTH ? img.height * scaleSize : img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.6)); 
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
 async function uploadImage(files) {
     if (!files || files.length === 0) files = document.getElementById('fileInput').files;
     if (files.length === 0) return alert("请选择图片");
@@ -173,6 +193,8 @@ async function uploadImage(files) {
         const formData = new FormData();
         formData.append('file', files[i]);
         formData.append('category_id', categoryId);
+        const thumbBase64 = await generateThumbnail(files[i]);
+        formData.append('thumbnail', thumbBase64);
         formData.append('title', titleVal); 
         
         let retry = 0;
@@ -545,9 +567,9 @@ function filterAdminImagesByStorage(storageType) {
     } else if (storageType === 'tg') {
         adminFilteredImages = adminAllImages.filter(img => img.message_id !== 0);
     }
-    adminCurrentPage = 1; // 筛选后回到第一页
-    renderAdminGallery(); // 重新渲染图片列表
-    renderAdminPagination(); // 重新渲染分页数据
+    adminCurrentPage = 1; 
+    renderAdminGallery(); 
+    renderAdminPagination(); 
 }
 function getSelectedIds() {
     return Array.from(document.querySelectorAll('.img-checkbox:checked')).map(cb => parseInt(cb.value));
