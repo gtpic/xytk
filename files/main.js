@@ -162,7 +162,7 @@ function renderGallery() {
         return `
         <div class="item">
             <a href="${img.url}" target="_blank">
-                <img src="${img.url}" alt="${img.filename || 'image'}" loading="lazy">
+                <img src="${img.url.replace('/image/', '/thumb/').replace(/\.[^/.]+$/, "")}" alt="${img.filename || 'image'}" loading="lazy">
             </a>
             ${showTitle ? `<div style="padding: 12px; text-align: center; color: #444; font-size: 14px; font-weight: 500; background: #fff; border-top: 1px solid #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(img.description)}</div>` : ''}
         </div>
