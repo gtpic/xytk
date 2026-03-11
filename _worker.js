@@ -77,7 +77,7 @@ export default {
       const { results } = await env.db.prepare("SELECT key, value FROM settings").all();
       results.forEach(row => { config[row.key] = row.value; });
     } catch (err) {
-      return jsonResponse({ error: "Database not initialized or binding 'DB' missing." }, 500);
+      return jsonResponse({ error: "Database not initialized or binding 'db' missing." }, 500);
     }
   
     if (url.pathname === '/api/public/siteinfo' && request.method === 'GET') {
@@ -113,7 +113,7 @@ export default {
       }));
       return jsonResponse(publicImages);
     }
-    async function handleUpload(photo, filename, sourceDesc, categoryId = 0, customTitle = '') {
+    async function handleUpload(photo, filename, sourceDesc, categoryId = 0, customTitle = '', thumbnailData = null) {
       
       if (!photo || !photo.type) {
         throw new Error("无效的文件");
@@ -133,6 +133,7 @@ export default {
         await env.r2.put(fileId, photo);
         const finalDesc = customTitle ? customTitle : `${sourceDesc} (R2)`;
         await env.db.prepare("INSERT INTO images (file_id, message_id, filename, description, category_id) VALUES (?, ?, ?, ?, ?)").bind(fileId, 0, filename, finalDesc, categoryId).run();
+        if (thumbnailData && env.kv) await env.kv.put(fileId, thumbnailData);
         return { success: true, url: `${url.origin}/image/${fileId}${ext}`, file_id: fileId };
       } else {
         const tgFormData = new FormData();
@@ -146,6 +147,7 @@ export default {
           const fileId = tgDoc.file_id;
           const finalDesc = customTitle ? customTitle : `${sourceDesc} (TG)`;
           await env.db.prepare("INSERT INTO images (file_id, message_id, filename, description, category_id) VALUES (?, ?, ?, ?, ?)").bind(fileId, tgData.result.message_id, filename, finalDesc, categoryId).run();
+          if (thumbnailData && env.kv) await env.kv.put(fileId, thumbnailData);
           return { success: true, url: `${url.origin}/image/${fileId}${ext}`, file_id: fileId }; 
         }
         throw new Error('TG API 错误');
@@ -198,7 +200,7 @@ export default {
               const photo = formData.get('file');
               const categoryId = formData.get('category_id') || 0;
               const customTitle = formData.get('title') || ''; 
-              const result = await handleUpload(photo, photo.name || 'admin_upload.png', 'Admin Upload', categoryId, customTitle);
+              const result = await handleUpload(photo, photo.name || 'admin_upload.png', 'Admin Upload', categoryId, customTitle, formData.get('thumbnail'));
               return jsonResponse(result);
             } catch (err) { return jsonResponse({ error: err.message }, 500); }
       }
@@ -215,6 +217,7 @@ export default {
               body: JSON.stringify({ chat_id: config.tg_chat_id, message_id: record.message_id })
             });
           }
+          if (env.kv) await env.kv.delete(record.file_id);
           await env.db.prepare("DELETE FROM images WHERE id = ?").bind(id).run();
         }
         return jsonResponse({ success: true });
@@ -234,6 +237,7 @@ export default {
                   body: JSON.stringify({ chat_id: config.tg_chat_id, message_id: record.message_id })
                 });
               }
+              if (env.kv) await env.kv.delete(record.file_id);
             }
             await env.db.prepare(`DELETE FROM images WHERE id IN (${placeholders})`).bind(...ids).run();
           }
@@ -458,7 +462,21 @@ export default {
         return jsonResponse({ success: true });
       }
     }
-
+    if (url.pathname.startsWith('/thumb/')) {
+      const thumbId = url.pathname.replace('/thumb/', '');
+      if (env.kv) {
+        const thumbData = await env.kv.get(thumbId);
+        if (thumbData) {
+          const base64Str = thumbData.split(',')[1];
+          const binaryImg = atob(base64Str);
+          const buffer = new ArrayBuffer(binaryImg.length);
+          const view = new Uint8Array(buffer);
+          for (let i = 0; i < binaryImg.length; i++) view[i] = binaryImg.charCodeAt(i);
+          return new Response(buffer, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000' } });
+        }
+      }
+      return Response.redirect(`${url.origin}/image/${thumbId}.jpg`, 302);
+    }
     if (url.pathname.startsWith('/image/')) {
       const cache = caches.default;
       const cacheKey = new Request(url.toString(), request);
