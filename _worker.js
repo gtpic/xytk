@@ -43,7 +43,7 @@ export default {
             ('site_footer_2', '<a href="" target="_blank"><i class="fab fa-qq"></i> 137222445</a><span class="split" style="margin: 0 3px;">|</span><a href="" target="_blank"><i class="fab fa-telegram-plane"></i> @gv1688</a><span class="split" style="margin: 0 3px;">|</span><a href="/admin" target="_blank">登陆</a>')`),
           
           // 2. 创建图片和分类数据表
-          env.db.prepare(`CREATE TABLE IF NOT EXISTS images (id INTEGER PRIMARY KEY AUTOINCREMENT, file_id TEXT NOT NULL, message_id INTEGER NOT NULL, filename TEXT, description TEXT, upload_time DATETIME DEFAULT CURRENT_TIMESTAMP, category_id INTEGER DEFAULT 0, group_id INTEGER DEFAULT 0)`),
+          env.db.prepare(`CREATE TABLE IF NOT EXISTS images (id INTEGER PRIMARY KEY AUTOINCREMENT, file_id TEXT NOT NULL, message_id INTEGER NOT NULL, filename TEXT, description TEXT, upload_time DATETIME DEFAULT CURRENT_TIMESTAMP, category_id INTEGER DEFAULT 0, group_id INTEGER DEFAULT 0, dim TEXT)`),
           env.db.prepare(`CREATE TABLE IF NOT EXISTS categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, sort_order INTEGER DEFAULT 0, is_show INTEGER DEFAULT 1, parent_id INTEGER DEFAULT 0)`),
           
           // 3. 建立数据库性能索引
@@ -65,7 +65,7 @@ export default {
         await env.db.batch(stmts);
         return jsonResponse({ 
             success: true, 
-            message: "🎉 恭喜！数据库初始化成功！表结构与多级分类菜单已完全按预设就绪。请访问 /admin.html 登录后台，默认账号 admin，密码 123456" 
+            message: "🎉 恭喜！数据库初始化成功！..."
         });
       } catch (e) {
         return jsonResponse({ error: "初始化失败: " + e.message }, 500);
@@ -113,8 +113,7 @@ export default {
       }));
       return jsonResponse(publicImages);
     }
-    async function handleUpload(photo, filename, sourceDesc, categoryId = 0, customTitle = '', thumbnailData = null) {
-      
+    async function handleUpload(photo, filename, sourceDesc, categoryId = 0, customTitle = '', thumbnailData = null, dim = '') {
       if (!photo || !photo.type) {
         throw new Error("无效的文件");
       }
@@ -132,7 +131,7 @@ export default {
         const fileId = crypto.randomUUID();
         await env.r2.put(fileId, photo);
         const finalDesc = customTitle ? customTitle : `${sourceDesc} (R2)`;
-        await env.db.prepare("INSERT INTO images (file_id, message_id, filename, description, category_id) VALUES (?, ?, ?, ?, ?)").bind(fileId, 0, filename, finalDesc, categoryId).run();
+        await env.db.prepare("INSERT INTO images (file_id, message_id, filename, description, category_id, dim) VALUES (?, ?, ?, ?, ?, ?)").bind(fileId, 0, filename, finalDesc, categoryId, dim).run();
         if (thumbnailData && env.kv) await env.kv.put(fileId, thumbnailData);
         return { success: true, url: `${url.origin}/image/${fileId}${ext}`, file_id: fileId };
       } else {
@@ -146,7 +145,7 @@ export default {
           const tgDoc = tgData.result.document || tgData.result.animation || tgData.result.video || tgData.result.photo?.pop();
           const fileId = tgDoc.file_id;
           const finalDesc = customTitle ? customTitle : `${sourceDesc} (TG)`;
-          await env.db.prepare("INSERT INTO images (file_id, message_id, filename, description, category_id) VALUES (?, ?, ?, ?, ?)").bind(fileId, tgData.result.message_id, filename, finalDesc, categoryId).run();
+          await env.db.prepare("INSERT INTO images (file_id, message_id, filename, description, category_id, dim) VALUES (?, ?, ?, ?, ?, ?)").bind(fileId, tgData.result.message_id, filename, finalDesc, categoryId, dim).run();
           if (thumbnailData && env.kv) await env.kv.put(fileId, thumbnailData);
           return { success: true, url: `${url.origin}/image/${fileId}${ext}`, file_id: fileId }; 
         }
@@ -200,7 +199,7 @@ export default {
               const photo = formData.get('file');
               const categoryId = formData.get('category_id') || 0;
               const customTitle = formData.get('title') || ''; 
-              const result = await handleUpload(photo, photo.name || 'admin_upload.png', 'Admin Upload', categoryId, customTitle, formData.get('thumbnail'));
+              const result = await handleUpload(photo, photo.name || 'admin_upload.png', 'Admin Upload', categoryId, customTitle, formData.get('thumbnail'), formData.get('dim') || '');
               return jsonResponse(result);
             } catch (err) { return jsonResponse({ error: err.message }, 500); }
       }
