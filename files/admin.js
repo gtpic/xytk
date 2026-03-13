@@ -311,6 +311,11 @@ async function loadCategories() {
         let options = '<option value="0">默认分类</option>' + treeData.map(cat => `<option value="${cat.id}">${'&nbsp;'.repeat(cat.lvl*4)}${cat.name}</option>`).join('');
         if (uploadCatEl) uploadCatEl.innerHTML = options;
         window.categoryOptions = options;
+        const apiUploadCatEl = document.getElementById('set_api_upload_category');
+            if (apiUploadCatEl) {
+                apiUploadCatEl.innerHTML = options;
+                if (apiUploadCatEl.dataset.val) apiUploadCatEl.value = apiUploadCatEl.dataset.val;
+            }
         const batchCatEl = document.getElementById('batchEditCategory');
         if (batchCatEl) batchCatEl.innerHTML = options;
         const parentSel = document.getElementById('new-category-parent');
@@ -396,16 +401,19 @@ async function loadSettings() {
     try {
         const res = await fetch(`${apiBaseUrl}/api/admin/settings`, { headers: { 'Authorization': authHeader } });
         const s = await res.json();
-        ['tg_bot_token', 'tg_chat_id', 'api_key', 'admin_user', 'admin_pass', 'site_favicon', 'storage_provider', 'site_name', 'show_site_name', 'site_logo', 'show_site_logo', 'site_footer_1', 'site_footer_2', 'mobile_sidebar_image'].forEach(key => {
-            const el = document.getElementById(`set_${key}`);
-            if(el && s[key]) el.value = s[key];
+        ['tg_bot_token', 'tg_chat_id', 'api_key', 'api_upload_category', 'admin_user', 'admin_pass', 'site_favicon', 'storage_provider', 'site_name', 'show_site_name', 'site_logo', 'show_site_logo', 'site_footer_1', 'site_footer_2', 'mobile_sidebar_image'].forEach(key => {
+                const el = document.getElementById(`set_${key}`);
+                if(el && s[key]) {
+                    el.value = s[key];
+                    if (key === 'api_upload_category') el.dataset.val = s[key];
+                }
             if(key === 'site_favicon' && s[key]) document.getElementById('dynamic-favicon').href = s[key];
         });
     } catch (e) {}
 }
 async function saveSettings() {
     const updates = {};
-    ['tg_bot_token', 'tg_chat_id', 'api_key', 'admin_user', 'admin_pass', 'site_favicon', 'storage_provider', 'site_name', 'show_site_name', 'site_logo', 'show_site_logo', 'mobile_sidebar_image'].forEach(key => {
+    ['tg_bot_token', 'tg_chat_id', 'api_key', 'api_upload_category', 'admin_user', 'admin_pass', 'site_favicon', 'storage_provider', 'site_name', 'show_site_name', 'site_logo', 'show_site_logo', 'mobile_sidebar_image'].forEach(key => {
         const el = document.getElementById(`set_${key}`);
         if(el && el.value.trim() !== '') updates[key] = el.value.trim();
     });
