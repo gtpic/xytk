@@ -34,7 +34,7 @@ export default {
           env.db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES 
             ('admin_user', 'admin'), ('admin_pass', '123456'), 
             ('tg_bot_token', ''), ('tg_chat_id', ''), 
-            ('api_key', 'sk-my-blog-secret-key-888'), 
+            ('api_key', 'sk-my-blog-secret-key-888'), ('api_upload_category', '0'),
             ('site_favicon', 'files/xytk.png'), ('site_name', '夏雨图床'), 
             ('show_site_name', 'off'), ('site_logo', 'files/logo.png'), 
             ('show_site_logo', 'on'), ('storage_provider', 'r2'), 
@@ -163,7 +163,7 @@ export default {
         try {
           const formData = await request.formData();
           const photo = formData.get('file');
-          const result = await handleUpload(photo, photo.name || 'api_upload.png', 'API Upload');
+          const result = await handleUpload(photo, photo.name || 'api_upload.png', 'API Upload', parseInt(config.api_upload_category || 0));
           return jsonResponse(result);
         } catch (err) { return jsonResponse({ error: err.message }, 500); }
       }
