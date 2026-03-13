@@ -45,7 +45,7 @@
     <div class="admin-overlay"></div>
     <div class="admin-sidebar">
         <div class="sidebar-header">
-            <a href="#">夏雨图库</a>
+            <a href="#">我的图库</a>
         </div>
         <ul class="nav">
             <li class="active" id="nav-images" onclick="switchTab('images')">
@@ -199,7 +199,10 @@
                     </div>
                     <div class="form-group">
                         <label class="col-sm-3 control-label">外部 API Key</label>
-                        <div class="col-sm-9"><input type="text" id="set_api_key" class="form-control"></div>
+                        <div class="col-sm-9" style="display: flex; gap: 10px;">
+                            <input type="text" id="set_api_key" class="form-control">
+                            <select id="set_api_upload_category" class="form-control" style="width: 150px;"></select>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="col-sm-3 control-label">后台账号</label>
