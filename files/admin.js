@@ -1,6 +1,6 @@
 window.alert = function(msg) {
     if (msg === "Failed to fetch" || msg === "NetworkError when attempting to fetch resource.") {
-        msg = "网络连接失败，请检查网络或后端域名配置";
+        msg = "网络连接失败，请检查网络或后端域名配置!";
     }
     const toast = document.createElement('div');
     toast.innerText = msg;
